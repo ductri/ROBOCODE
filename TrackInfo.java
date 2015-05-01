@@ -4,9 +4,9 @@ import java.awt.Point;
 
 public class TrackInfo {
 	public Point pos;
-	public double time;
+	public long time;
 	public double velocity;
-	public TrackInfo(Point p, double t, double v)
+	public TrackInfo(Point p, long t, double v)
 	{
 		pos=p;
 		time=t;

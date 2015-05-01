@@ -1,5 +1,6 @@
 package stupid_tank;
 import robocode.*;
+import sample.Fire;
 
 import java.awt.Color;
 import java.awt.Point;
@@ -27,9 +28,8 @@ public class Stupid_tank extends AdvancedRobot
 		while (movable)
 		{
 			setMaxVelocity(speed);
-			
 			setTurnRadarLeft(36000);
-			//execute();
+			
 			
 			setTurnRight(10000); 
 
@@ -39,12 +39,6 @@ public class Stupid_tank extends AdvancedRobot
 	        else back(1000);
 		}
 	}
-
-	/**
-	 * onScannedRobot: What to do when you see another robot
-	 */
-	
-	
 	
 	int index=1;
 	public void onScannedRobot(ScannedRobotEvent e) {
@@ -53,13 +47,33 @@ public class Stupid_tank extends AdvancedRobot
 		tracks[index%2].pos.x=(int)(e.getDistance()*Math.cos((-enemy_world+Math.PI/2))+getX());
 		tracks[index%2].pos.y=(int)(e.getDistance()*Math.sin((-enemy_world+Math.PI/2))+getY());
 		tracks[index%2].time=e.getTime();
-		tracks[index%2].time=e.getVelocity();
+		tracks[index%2].velocity=e.getVelocity();
 		
 		
 		System.out.println(tracks[index%2].pos.x);
 		System.out.println(tracks[index%2].pos.y);
+		System.out.println(tracks[index%2].velocity);
 		System.out.println("%%%%%%%%%%%%%%%%");
-		kill_it(0.1,tracks[index%2].pos.x,tracks[index%2].pos.y);
+		
+		double bullet_power=Rules.MAX_BULLET_POWER;
+		System.out.println("power="+bullet_power);
+		double vb= Rules.getBulletSpeed(bullet_power);
+				
+				//e.getDistance()/vb;
+		double vx=e.getVelocity()*Math.sin(e.getHeadingRadians());
+		double vy=e.getVelocity()*Math.cos(e.getHeadingRadians());
+		
+		double t;
+		double a=tracks[index%2].pos.x-getX();
+		double b=tracks[index%2].pos.y-getY();
+		double delta=Math.sqrt((a*vx+b*vy)*(a*vx+b*vy)-(vx*vx+vy*vy-vb*vb)*(a*a+b*b));
+		t=(-(a*vx+b*vy)-delta)/(vx*vx+vy*vy-vb*vb);
+		if (t<0)
+			t=(-(a*vx+b*vy)+delta)/(vx*vx+vy*vy-vb*vb);
+		System.out.println("t="+t);
+		
+		
+		kill_it(bullet_power,tracks[index%2].pos.x+(int)(vx*t),tracks[index%2].pos.y+(int)(vy*t));
 	}
 	
 	/*
@@ -67,8 +81,6 @@ public class Stupid_tank extends AdvancedRobot
 	 */
 	public void kill_it(double size_bullet, int x, int y)
 	{
-		System.out.println("x="+x);
-		System.out.println("y="+y);
 		double enemy_world=0;
 		if (Math.abs(y-getY())<0.001)
 			if ((x-getX())>0)
@@ -84,7 +96,6 @@ public class Stupid_tank extends AdvancedRobot
 			}
 		}
 		
-		System.out.println("enemy="+enemy_world);
 		double angel=enemy_world-getGunHeadingRadians();
 		if (Math.abs(angel)<(Math.PI*2-Math.abs(angel)))
 			turnGunRightRadians(angel);
@@ -93,7 +104,9 @@ public class Stupid_tank extends AdvancedRobot
 				turnGunRightRadians(angel-Math.PI*2);
 			else turnGunRightRadians(angel+Math.PI*2);
 		}
-		fire(size_bullet);
+		//fire(size_bullet);
+		
+		fireBullet(size_bullet);
 	}
 	/**
 	 * onHitByBullet: What to do when you're hit by a bullet
