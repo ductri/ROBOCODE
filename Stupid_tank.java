@@ -1,6 +1,8 @@
 package stupid_tank;
 import robocode.*;
+
 import java.awt.Color;
+import java.awt.Point;
 /**
  * Stupid_tank - a robot by Duc Tri
  */
@@ -8,55 +10,91 @@ public class Stupid_tank extends AdvancedRobot
 {
 	boolean back=false;
 	boolean movable=true;
+	
+	TrackInfo[] tracks=new TrackInfo[2];
+	
 	public void run() {
+		for (int i=0;i<2;i++)
+			tracks[i]=new TrackInfo();
+		
 		setColors(Color.red,Color.blue,Color.green); // body,gun,radar
 	 	setAdjustRadarForGunTurn(true);
 	 	setAdjustGunForRobotTurn(true);
 	 	setAdjustRadarForRobotTurn(true);
 	 	setInterruptible(true);
-	 	setMaxVelocity(8);
+	 	 
+	 	 double speed=8.0;
 		while (movable)
 		{
-			setTurnRadarLeft(360); 
-	        
-	        // Start moving (and turning)
+			setMaxVelocity(speed);
+			
+			setTurnRadarLeft(36000);
+			//execute();
+			
+			setTurnRight(10000); 
+
+			
 	        if (!back)
-	        	ahead(100);
-	        else back(100);
-	        
-			System.out.println("ductri");
+	        	ahead(1000); 
+	        else back(1000);
 		}
 	}
 
 	/**
 	 * onScannedRobot: What to do when you see another robot
 	 */
+	
+	
+	
+	int index=1;
 	public void onScannedRobot(ScannedRobotEvent e) {
-		//movable=false;
-		// Replace the next line with any behavior you would like
-		System.out.println(e.getBearing());
-		//setTurnRadarRight(getHeading() - getRadarHeading() + e.getBearing());
-		System.out.println("Gun:"+getGunHeading());
-		System.out.println("Bearing radar, head: "+e.getBearing());
+		index++;
+		double enemy_world=getHeadingRadians()+e.getBearingRadians();
+		tracks[index%2].pos.x=(int)(e.getDistance()*Math.cos((-enemy_world+Math.PI/2))+getX());
+		tracks[index%2].pos.y=(int)(e.getDistance()*Math.sin((-enemy_world+Math.PI/2))+getY());
+		tracks[index%2].time=e.getTime();
+		tracks[index%2].time=e.getVelocity();
 		
-		//double angel=getGunHeading()-(e.getBearing()-(360-getHeading()));
-		double angel=getHeading()-getGunHeading()+e.getBearing();
-		if (Math.abs(angel)<Math.abs(360-Math.abs(angel)))
-			turnGunRight(angel);
+		
+		System.out.println(tracks[index%2].pos.x);
+		System.out.println(tracks[index%2].pos.y);
+		System.out.println("%%%%%%%%%%%%%%%%");
+		kill_it(0.1,tracks[index%2].pos.x,tracks[index%2].pos.y);
+	}
+	
+	/*
+	 * x,y is position of enemy in world
+	 */
+	public void kill_it(double size_bullet, int x, int y)
+	{
+		System.out.println("x="+x);
+		System.out.println("y="+y);
+		double enemy_world=0;
+		if (Math.abs(y-getY())<0.001)
+			if ((x-getX())>0)
+				enemy_world=Math.PI/2.0;
+			else enemy_world=-Math.PI/2.0;
+		else
+		{
+			enemy_world=Math.atan(((float)(x-getX()))/((float)(y-getY())));
+			int factor=(x-getX())>0?1:-1;
+			if ((y-getY())<0)
+			{
+				enemy_world+=factor*Math.PI;
+			}
+		}
+		
+		System.out.println("enemy="+enemy_world);
+		double angel=enemy_world-getGunHeadingRadians();
+		if (Math.abs(angel)<(Math.PI*2-Math.abs(angel)))
+			turnGunRightRadians(angel);
 		else {
 			if (angel>0)
-				turnGunRight(angel-360);
-			else turnGunRight(angel+360);
+				turnGunRightRadians(angel-Math.PI*2);
+			else turnGunRightRadians(angel+Math.PI*2);
 		}
-			
-		
-		
-		System.out.println("360-..="+Math.abs(angel-360));
-		System.out.println("..="+Math.abs(angel));
-		
-		fire(1);
+		fire(size_bullet);
 	}
-
 	/**
 	 * onHitByBullet: What to do when you're hit by a bullet
 	 */
@@ -69,8 +107,6 @@ public class Stupid_tank extends AdvancedRobot
 	 * onHitWall: What to do when you hit a wall
 	 */
 	public void onHitWall(HitWallEvent e) {
-		// Replace the next line with any behavior you would like
 		back=!back;
-		System.out.println("backing");
 	}	
 }
